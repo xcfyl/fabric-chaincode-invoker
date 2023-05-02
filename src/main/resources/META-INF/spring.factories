@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.github.xcfyl.fabriccc.invoker.config.ChainCodeAutoConfiguration
