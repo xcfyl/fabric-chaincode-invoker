@@ -1,17 +1,15 @@
 package com.github.xcfyl.fabriccc.invoker.wallet;
 
 import com.github.xcfyl.fabriccc.invoker.config.DbWalletConfigProperties;
+import com.github.xcfyl.fabriccc.invoker.context.FabricContext;
 import com.github.xcfyl.fabriccc.invoker.user.FabricUser;
 import com.github.xcfyl.fabriccc.invoker.utils.DateTransUtils;
 import com.github.xcfyl.fabriccc.invoker.utils.FabricCryptoUtils;
-import com.github.xcfyl.fabriccc.invoker.context.FabricContext;
 import com.github.xcfyl.fabriccc.invoker.utils.SM2Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.hyperledger.fabric.sdk.User;
-import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.io.Resource;
 
 import java.io.InputStream;
@@ -30,7 +28,7 @@ import java.util.List;
  * @author 西城风雨楼
  */
 @Slf4j
-public abstract class FabricAbstractWallet implements IFabricWallet, ApplicationContextAware {
+public abstract class FabricAbstractWallet implements IFabricWallet  {
     protected final FabricContext fabricContext;
     protected final DbWalletConfigProperties walletConfig;
 
@@ -39,15 +37,19 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
     protected WalletRemoveInterceptor walletRemoveInterceptor;
     protected WalletQueryInterceptor walletQueryInterceptor;
 
+    private final ApplicationContext applicationContext;
+
     protected PrivateKey privateKey;
 
     protected PublicKey publicKey;
 
     protected KeyPair keyPair;
 
-    public FabricAbstractWallet(FabricContext fabricContext, DbWalletConfigProperties config) {
+    public FabricAbstractWallet(FabricContext fabricContext, DbWalletConfigProperties config, ApplicationContext applicationContext) {
         this.fabricContext = fabricContext;
         this.walletConfig = config;
+        this.applicationContext = applicationContext;
+        initKeyPair();
     }
 
     public void setWalletAddInterceptor(WalletAddInterceptor walletAddInterceptor) {
@@ -201,23 +203,23 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
         return doRes;
     }
 
-    public abstract boolean doClearWallet();
+    protected abstract boolean doClearWallet();
 
-    public abstract List<WalletInfo> doListWallet();
+    protected abstract List<WalletInfo> doListWallet();
 
-    public abstract List<WalletInfo> doListWallet(WalletStatus status);
+    protected abstract List<WalletInfo> doListWallet(WalletStatus status);
 
-    public abstract List<WalletInfo> doListWallet(String username, WalletStatus status);
+    protected abstract List<WalletInfo> doListWallet(String username, WalletStatus status);
 
-    public abstract List<WalletInfo> doListWallet(String username);
+    protected abstract List<WalletInfo> doListWallet(String username);
 
-    public abstract boolean doAddUser(WalletInfo walletInfo);
+    protected abstract boolean doAddUser(WalletInfo walletInfo);
 
-    public abstract boolean doRemoveUser(List<WalletInfo> walletInfoList, boolean force);
+    protected abstract boolean doRemoveUser(List<WalletInfo> walletInfoList, boolean force);
 
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    private void initKeyPair() {
         Resource walletKeyResource = applicationContext.getResource("classpath:.");
+        System.out.println(walletKeyResource);
         try {
             String path = walletKeyResource.getURI().getPath();
             // 读取配置文件中指定位置的私钥
@@ -249,9 +251,9 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
             throw new RuntimeException("获取钱包的公私钥相对路径失败");
         }
 
-        Resource pkResource = applicationContext.getResource("classpath:wallet_db_pk");
+        Resource pkResource = applicationContext.getResource("classpath:" + walletConfig.getPublicKeyPath());
 
-        Resource skResource = applicationContext.getResource("classpath:wallet_db_sk");
+        Resource skResource = applicationContext.getResource("classpath:" + walletConfig.getPrivateKeyPath());
 
         // 在这初始化私钥和公钥
         try (InputStream pkResourceInputStream = pkResource.getInputStream();

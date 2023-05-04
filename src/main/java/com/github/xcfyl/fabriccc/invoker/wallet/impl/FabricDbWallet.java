@@ -73,9 +73,10 @@ public class FabricDbWallet extends FabricAbstractWallet {
         return walletInfo;
     };
 
-    public FabricDbWallet(FabricContext fabricContext, JdbcTemplate jdbcTemplate, DbWalletConfigProperties walletConfig) {
+    public FabricDbWallet(FabricContext fabricContext, JdbcTemplate jdbcTemplate,
+                          DbWalletConfigProperties walletConfig, ApplicationContext applicationContext) {
         // 首先创建数据库数据源
-        super(fabricContext, walletConfig);
+        super(fabricContext, walletConfig, applicationContext);
         this.jdbcTemplate = jdbcTemplate;
     }
 

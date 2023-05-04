@@ -52,7 +52,7 @@ public class ChainCodeAutoConfiguration {
         WalletAddInterceptor addInterceptor = addInterceptorObjectProvider.getIfAvailable();
         WalletQueryInterceptor queryInterceptor = queryInterceptorObjectProvider.getIfAvailable();
 
-        FabricDbWallet fabricDbWallet = new FabricDbWallet(context, jdbcTemplate, properties);
+        FabricDbWallet fabricDbWallet = new FabricDbWallet(context, jdbcTemplate, properties, applicationContext);
         if (removeInterceptor != null) {
             fabricDbWallet.setWalletRemoveInterceptor(removeInterceptor);
         }

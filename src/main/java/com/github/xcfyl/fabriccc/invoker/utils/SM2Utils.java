@@ -49,6 +49,9 @@ public class SM2Utils {
      * @return 返回加密后的字节
      */
     public static byte[] encrypt(PublicKey publicKey, String message) {
+        if (message.length() == 0) {
+            return new byte[0];
+        }
         SM2EnginePool sm2EnginePool = new SM2EnginePool(1, SM2Engine.Mode.C1C2C3);
         SM2Engine sm2Engine = null;
         byte[] encrypted = null;
@@ -76,6 +79,10 @@ public class SM2Utils {
      * @return 返回被解密的对象
      */
     public static byte[] decrypt(PrivateKey privateKey, byte[] encrypted) {
+        if (encrypted.length == 0) {
+            return new byte[0];
+        }
+
         SM2EnginePool sm2EnginePool = new SM2EnginePool(1, SM2Engine.Mode.C1C2C3);
         SM2Engine sm2Engine = null;
         byte[] rs = null;
