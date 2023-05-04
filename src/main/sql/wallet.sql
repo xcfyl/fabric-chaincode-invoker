@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS t_wallet_info(
     expired_time DATETIME COMMENT '过期时间',
     status INT COMMENT '当前钱包的状态',
     public_key_hash VARCHAR(256) COMMENT '公钥的hash值',
+    extended varchar(4096) comment '扩展字段',
     PRIMARY KEY(wallet_id, username, public_key_hash)
 );
 

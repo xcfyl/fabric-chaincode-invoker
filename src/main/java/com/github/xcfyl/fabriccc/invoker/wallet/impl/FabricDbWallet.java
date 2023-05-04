@@ -46,6 +46,7 @@ public class FabricDbWallet extends FabricAbstractWallet implements ApplicationC
         Date expiredTime = rs.getDate("expired_time");
         Integer status = rs.getInt("status");
         String publicKeyHash = rs.getString("public_key_hash");
+        String extended = rs.getString("extended");
         // 对privateKey进行解密
         if (privateKey == null) {
             throw new RuntimeException("privateKey未找到");
@@ -68,6 +69,7 @@ public class FabricDbWallet extends FabricAbstractWallet implements ApplicationC
         walletInfo.setPrivateKey(new String(decryptPrivateKey));
         walletInfo.setPublicKey(new String(decodePublicKey));
         walletInfo.setPublicKeyHash(publicKeyHashDecode);
+        walletInfo.setExtended(extended);
         return walletInfo;
     };
 
@@ -141,7 +143,7 @@ public class FabricDbWallet extends FabricAbstractWallet implements ApplicationC
     public boolean doAddUser(WalletInfo walletInfo) {
         // 这里将User对象插入数据库中
         PreparedStatementCreator psc = con -> {
-            String sql = "INSERT INTO t_wallet_info(wallet_id, public_key, private_key, username, password, mspid, create_time, expired_time, status, public_key_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO t_wallet_info(wallet_id, public_key, private_key, username, password, mspid, create_time, expired_time, status, public_key_hash, extended) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             PreparedStatement ps = con.prepareStatement(sql);
             ps.setInt(1, walletInfo.getWalletId());
             // 获取公钥的字节数组
@@ -166,6 +168,7 @@ public class FabricDbWallet extends FabricAbstractWallet implements ApplicationC
             ps.setInt(9, walletInfo.getStatus());
             byte[] publicKeyHashEncode = Base64.getEncoder().encode(walletInfo.getPublicKeyHash());
             ps.setString(10, new String(publicKeyHashEncode));
+            ps.setString(11, walletInfo.getExtended());
             return ps;
         };
         return jdbcTemplate.update(psc) != 0;
@@ -206,8 +209,12 @@ public class FabricDbWallet extends FabricAbstractWallet implements ApplicationC
         Resource walletKeyResource = applicationContext.getResource("classpath:.");
         try {
             String path = walletKeyResource.getURI().getPath();
-            Path pkPath = Paths.get(path, "wallet_db_pk");
-            Path skPath = Paths.get(path, "wallet_db_sk");
+            // 读取配置文件中指定位置的私钥
+            String privateKeyPath = walletConfig.getPrivateKeyPath();
+            // 读取配置文件中指定位置的公钥
+            String publicKeyPath = walletConfig.getPublicKeyPath();
+            Path pkPath = Paths.get(path, publicKeyPath);
+            Path skPath = Paths.get(path, privateKeyPath);
 
             if (!Files.exists(pkPath) || !Files.exists(skPath)) {
                 // 如果当前公私钥对已经存在了，那么就不进行创建

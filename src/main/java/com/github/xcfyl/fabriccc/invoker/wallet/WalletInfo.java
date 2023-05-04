@@ -25,4 +25,5 @@ public class WalletInfo {
     private Date expiredTime;
     private Integer status;
     private byte[] publicKeyHash;
+    private String extended;
 }
