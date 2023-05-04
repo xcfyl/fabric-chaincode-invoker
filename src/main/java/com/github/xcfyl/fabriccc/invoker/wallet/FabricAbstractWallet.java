@@ -43,6 +43,8 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
 
     protected PublicKey publicKey;
 
+    protected KeyPair keyPair;
+
     public FabricAbstractWallet(FabricContext fabricContext, DbWalletConfigProperties config) {
         this.fabricContext = fabricContext;
         this.walletConfig = config;
@@ -72,7 +74,6 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
             return false;
         }
 
-        KeyPair keyPair = new KeyPair(publicKey, privateKey);
         if (walletRemoveInterceptor != null) {
             Boolean res = walletRemoveInterceptor.preRemove(keyPair, walletInfos, true);
             if (res != null) {
@@ -96,7 +97,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
     public List<WalletInfo> listWallet() {
         List<WalletInfo> walletInfos = doListWallet();
         if (walletQueryInterceptor != null) {
-            return walletQueryInterceptor.filterWalletInfo(walletInfos);
+            return walletQueryInterceptor.filterWalletInfo(keyPair, walletInfos);
         }
         return walletInfos;
     }
@@ -105,7 +106,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
     public List<WalletInfo> listWallet(WalletStatus status) {
         List<WalletInfo> walletInfos = doListWallet(status);
         if (walletQueryInterceptor != null) {
-            return walletQueryInterceptor.filterWalletInfo(walletInfos);
+            return walletQueryInterceptor.filterWalletInfo(keyPair, walletInfos);
         }
         return walletInfos;
     }
@@ -114,7 +115,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
     public List<WalletInfo> listWallet(String username, WalletStatus status) {
         List<WalletInfo> walletInfos = doListWallet(username, status);
         if (walletQueryInterceptor != null) {
-            return walletQueryInterceptor.filterWalletInfo(walletInfos);
+            return walletQueryInterceptor.filterWalletInfo(keyPair, walletInfos);
         }
         return walletInfos;
     }
@@ -123,7 +124,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
     public List<WalletInfo> listWallet(String username) {
         List<WalletInfo> walletInfos = doListWallet(username);
         if (walletQueryInterceptor != null) {
-            return walletQueryInterceptor.filterWalletInfo(walletInfos);
+            return walletQueryInterceptor.filterWalletInfo(keyPair, walletInfos);
         }
         return walletInfos;
     }
@@ -157,7 +158,6 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
         walletInfo.setStatus(status);
         walletInfo.setPublicKeyHash(publicKeyHash);
 
-        KeyPair keyPair = new KeyPair(this.publicKey, this.privateKey);
         if (walletAddInterceptor != null) {
             Boolean res = walletAddInterceptor.preAdd(keyPair, walletInfo);
             if (res != null) {
@@ -183,7 +183,6 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
             return false;
         }
 
-        KeyPair keyPair = new KeyPair(this.publicKey, this.privateKey);
         if (walletRemoveInterceptor != null) {
             Boolean res = walletRemoveInterceptor.preRemove(keyPair, walletInfos, force);
             if (res != null) {
@@ -262,6 +261,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
             log.debug("公钥: {}", new String(skBytes));
             publicKey = SM2Utils.loadPublicKeyFromFile(new StringReader(new String(pkBytes)));
             privateKey = SM2Utils.loadPrivateKeyFromFile(new StringReader(new String(skBytes)), null);
+            keyPair = new KeyPair(publicKey, privateKey);
         } catch (Exception e) {
             log.debug("初始化钱包公私钥对失败");
             throw new RuntimeException("初始化钱包公私钥对失败");
