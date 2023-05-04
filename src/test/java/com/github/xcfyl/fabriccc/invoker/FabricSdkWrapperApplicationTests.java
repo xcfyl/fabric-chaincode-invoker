@@ -14,7 +14,6 @@ class FabricSdkWrapperApplicationTests {
 
     @Test
     void contextLoads() {
-        log.debug("测试赋撒科菲迪斯看来减肥撒了");
     }
 
 }

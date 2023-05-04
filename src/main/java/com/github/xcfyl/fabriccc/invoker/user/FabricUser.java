@@ -8,7 +8,7 @@ import org.hyperledger.fabric.sdk.User;
 import java.util.Set;
 
 /**
- * @author zj
+ * @author xcfyl
  */
 @Setter
 @ToString

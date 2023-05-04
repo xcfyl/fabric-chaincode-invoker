@@ -1,4 +1,4 @@
-package com.github.xcfyl.fabriccc.invoker.handler.resparseimpl;
+package com.github.xcfyl.fabriccc.invoker.handler.impl;
 
 import com.github.xcfyl.fabriccc.invoker.handler.TypeParseHandler;
 

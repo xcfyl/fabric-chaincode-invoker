@@ -1,6 +1,5 @@
 package com.github.xcfyl.fabriccc.invoker.wallet;
 
-import java.security.Key;
 import java.security.KeyPair;
 
 /**

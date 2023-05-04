@@ -40,7 +40,6 @@ public class SM2Utils {
         }
     }
 
-
     /**
      * 使用公钥加密
      *
