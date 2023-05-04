@@ -57,11 +57,11 @@ public class CommonUtils {
      * @param mspId mspId
      * @return 返回admin对象
      */
-    public static User loadAdminFromLocal(String username,
-                                   String password,
-                                   String certPath,
-                                   String pkPath,
-                                   String mspId) {
+    public static User loadUserFromLocal(String username,
+                                         String password,
+                                         String certPath,
+                                         String pkPath,
+                                         String mspId) {
         PrivateKey key;
         String certificate;
         BufferedInputStream keyReader = null;

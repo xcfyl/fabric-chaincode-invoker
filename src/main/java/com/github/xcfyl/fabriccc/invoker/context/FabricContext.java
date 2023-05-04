@@ -190,7 +190,7 @@ public class FabricContext {
 
         for (UserConfig userConfig : fabricConfig.getUserConfigs()) {
             if (userConfig.getIsAdmin()) {
-                admin = CommonUtils.loadAdminFromLocal(
+                admin = CommonUtils.loadUserFromLocal(
                         userConfig.getUsernameForCA(),
                         userConfig.getPasswdForCA(),
                         userConfig.getCertPath(),
