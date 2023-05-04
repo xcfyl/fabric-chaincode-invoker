@@ -139,6 +139,26 @@ public class FabricDbWallet extends FabricAbstractWallet implements ApplicationC
         return jdbcTemplate.query(psc, rowMapper);
     }
 
+    /**
+     * 使用钱包私钥对数据进行加密
+     *
+     * @param origin
+     * @return
+     */
+    public byte[] encrypt(String origin) {
+        return SM2Utils.encrypt(publicKey, origin);
+    }
+
+    /**
+     * 使用钱包公钥对数据进行解密
+     *
+     * @param origin
+     * @return
+     */
+    public byte[] decrypt(byte[] origin) {
+        return SM2Utils.decrypt(privateKey, origin);
+    }
+
     @Override
     public boolean doAddUser(WalletInfo walletInfo) {
         // 这里将User对象插入数据库中
