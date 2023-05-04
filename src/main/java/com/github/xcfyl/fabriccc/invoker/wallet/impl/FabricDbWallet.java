@@ -71,7 +71,7 @@ public class FabricDbWallet extends FabricAbstractWallet {
     }
 
     @Override
-    public boolean doClearWallet() {
+    protected boolean doClearWallet() {
         PreparedStatementCreator psc = con -> {
             String sql = "DELETE FROM t_wallet_info WHERE wallet_id = ?";
             PreparedStatement ps = con.prepareStatement(sql);
@@ -83,7 +83,7 @@ public class FabricDbWallet extends FabricAbstractWallet {
     }
 
     @Override
-    public List<WalletInfo> doListWallet() {
+    protected List<WalletInfo> doListWallet() {
         PreparedStatementCreator psc = con -> {
             String sql = "SELECT * FROM t_wallet_info WHERE wallet_id = ?";
             PreparedStatement ps = con.prepareStatement(sql);
@@ -94,7 +94,7 @@ public class FabricDbWallet extends FabricAbstractWallet {
     }
 
     @Override
-    public List<WalletInfo> doListWallet(WalletStatus status) {
+    protected List<WalletInfo> doListWallet(WalletStatus status) {
         PreparedStatementCreator psc = con -> {
             String sql = "SELECT * FROM t_wallet_info WHERE wallet_id = ? AND status = ?";
             PreparedStatement ps = con.prepareStatement(sql);
@@ -106,7 +106,7 @@ public class FabricDbWallet extends FabricAbstractWallet {
     }
 
     @Override
-    public List<WalletInfo> doListWallet(String username, WalletStatus status) {
+    protected List<WalletInfo> doListWallet(String username, WalletStatus status) {
         PreparedStatementCreator psc = con -> {
             String sql = "SELECT * FROM t_wallet_info WHERE wallet_id = ? AND status = ? and username = ?";
             PreparedStatement ps = con.prepareStatement(sql);
@@ -119,7 +119,7 @@ public class FabricDbWallet extends FabricAbstractWallet {
     }
 
     @Override
-    public List<WalletInfo> doListWallet(String username) {
+    protected List<WalletInfo> doListWallet(String username) {
         PreparedStatementCreator psc = con -> {
             String sql = "SELECT * FROM t_wallet_info WHERE wallet_id = ? and username = ?";
             PreparedStatement ps = con.prepareStatement(sql);
@@ -130,28 +130,8 @@ public class FabricDbWallet extends FabricAbstractWallet {
         return jdbcTemplate.query(psc, rowMapper);
     }
 
-    /**
-     * 使用钱包私钥对数据进行加密
-     *
-     * @param origin
-     * @return
-     */
-    public byte[] encrypt(String origin) {
-        return SM2Utils.encrypt(publicKey, origin);
-    }
-
-    /**
-     * 使用钱包公钥对数据进行解密
-     *
-     * @param origin
-     * @return
-     */
-    public byte[] decrypt(byte[] origin) {
-        return SM2Utils.decrypt(privateKey, origin);
-    }
-
     @Override
-    public boolean doAddUser(WalletInfo walletInfo) {
+    protected boolean doAddUser(WalletInfo walletInfo) {
         // 这里将User对象插入数据库中
         PreparedStatementCreator psc = con -> {
             String sql = "INSERT INTO t_wallet_info(wallet_id, public_key, private_key, username, password, mspid, create_time, expired_time, status, public_key_hash, extended) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -186,7 +166,7 @@ public class FabricDbWallet extends FabricAbstractWallet {
     }
 
     @Override
-    public boolean doRemoveUser(List<WalletInfo> walletInfoList, boolean force) {
+    protected boolean doRemoveUser(List<WalletInfo> walletInfoList, boolean force) {
         // 这里将User对象插入数据库中
         for (WalletInfo walletInfo : walletInfoList) {
             PreparedStatementCreator psc = con -> {
