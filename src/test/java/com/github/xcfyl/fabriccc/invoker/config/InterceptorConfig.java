@@ -6,6 +6,7 @@ import com.github.xcfyl.fabriccc.invoker.wallet.WalletRemoveInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.security.KeyPair;
 import java.util.List;
 
 /**
@@ -17,14 +18,14 @@ public class InterceptorConfig {
     public WalletAddInterceptor addInterceptor() {
         return new WalletAddInterceptor() {
             @Override
-            public Boolean preAdd(WalletInfo walletInfo) {
+            public Boolean preAdd(KeyPair keyPair, WalletInfo walletInfo) {
                 System.out.println("添加前置方法");
                 System.out.println(walletInfo);
                 return null;
             }
 
             @Override
-            public Boolean afterAdd(WalletInfo walletInfo) {
+            public Boolean afterAdd(KeyPair keyPair, WalletInfo walletInfo) {
                 System.out.println("添加后置方法");
                 System.out.println(walletInfo);
                 return null;
@@ -36,14 +37,14 @@ public class InterceptorConfig {
     public WalletRemoveInterceptor removeInterceptor() {
         return new WalletRemoveInterceptor() {
             @Override
-            public Boolean preRemove(List<WalletInfo> walletInfoList, boolean force) {
+            public Boolean preRemove(KeyPair keyPair, List<WalletInfo> walletInfoList, boolean force) {
                 System.out.println("删除前置方法");
                 System.out.println(walletInfoList);
                 return null;
             }
 
             @Override
-            public Boolean afterRemove(List<WalletInfo> walletInfoList, boolean force) {
+            public Boolean afterRemove(KeyPair keyPair, List<WalletInfo> walletInfoList, boolean force) {
                 System.out.println("删除后置方法");
                 System.out.println(walletInfoList);
                 return null;

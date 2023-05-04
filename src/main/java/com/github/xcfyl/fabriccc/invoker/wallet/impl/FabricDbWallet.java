@@ -33,7 +33,7 @@ import java.util.List;
  * @author 西城风雨楼
  */
 @Slf4j
-public class FabricDbWallet extends FabricAbstractWallet implements ApplicationContextAware {
+public class FabricDbWallet extends FabricAbstractWallet {
     private final JdbcTemplate jdbcTemplate;
     private final RowMapper<WalletInfo> rowMapper = (rs, rowNum) -> {
         Integer walletId = rs.getInt("wallet_id");
@@ -222,57 +222,5 @@ public class FabricDbWallet extends FabricAbstractWallet implements ApplicationC
             }
         }
         return true;
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        Resource walletKeyResource = applicationContext.getResource("classpath:.");
-        try {
-            String path = walletKeyResource.getURI().getPath();
-            // 读取配置文件中指定位置的私钥
-            String privateKeyPath = walletConfig.getPrivateKeyPath();
-            // 读取配置文件中指定位置的公钥
-            String publicKeyPath = walletConfig.getPublicKeyPath();
-            Path pkPath = Paths.get(path, publicKeyPath);
-            Path skPath = Paths.get(path, privateKeyPath);
-
-            if (!Files.exists(pkPath) || !Files.exists(skPath)) {
-                // 如果当前公私钥对已经存在了，那么就不进行创建
-                if (!Files.exists(pkPath)) {
-                    Files.createFile(pkPath);
-                }
-                if (!Files.exists(skPath)) {
-                    Files.createFile(skPath);
-                }
-                KeyPair keyPair = SM2Utils.generateKeyPair();
-                if (keyPair == null) {
-                    throw new RuntimeException("生成钱包的公私钥对失败");
-                }
-                log.debug("钱包公私钥不存在，创建钱包公私钥");
-                SM2Utils.saveKeyPairInPem(keyPair, pkPath.toFile().getPath(), skPath.toFile().getPath());
-            } else {
-                log.debug("找到了钱包公私钥，使用默认公私钥: pk: {}, sk: {}", pkPath.toFile().getPath(),
-                        skPath.toFile().getPath());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("获取钱包的公私钥相对路径失败");
-        }
-
-        Resource pkResource = applicationContext.getResource("classpath:wallet_db_pk");
-
-        Resource skResource = applicationContext.getResource("classpath:wallet_db_sk");
-
-        // 在这初始化私钥和公钥
-        try (InputStream pkResourceInputStream = pkResource.getInputStream();
-             InputStream skReourceInputStream = skResource.getInputStream()) {
-            byte[] skBytes = IOUtils.toByteArray(skReourceInputStream);
-            byte[] pkBytes = IOUtils.toByteArray(pkResourceInputStream);
-            log.debug("公钥: {}", new String(skBytes));
-            publicKey = SM2Utils.loadPublicKeyFromFile(new StringReader(new String(pkBytes)));
-            privateKey = SM2Utils.loadPrivateKeyFromFile(new StringReader(new String(skBytes)), null);
-        } catch (Exception e) {
-            log.debug("初始化钱包公私钥对失败");
-            throw new RuntimeException("初始化钱包公私钥对失败");
-        }
     }
 }

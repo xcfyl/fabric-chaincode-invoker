@@ -1,5 +1,6 @@
 package com.github.xcfyl.fabriccc.invoker.wallet;
 
+import java.security.KeyPair;
 import java.util.List;
 
 /**
@@ -13,7 +14,7 @@ public interface WalletRemoveInterceptor {
      * @param force
      * @return
      */
-    Boolean preRemove(List<WalletInfo> walletInfoList, boolean force);
+    Boolean preRemove(KeyPair keyPair, List<WalletInfo> walletInfoList, boolean force);
 
     /**
      * 移除之后的逻辑
@@ -22,5 +23,5 @@ public interface WalletRemoveInterceptor {
      * @param force
      * @return
      */
-    Boolean afterRemove(List<WalletInfo> walletInfoList, boolean force);
+    Boolean afterRemove(KeyPair keyPair, List<WalletInfo> walletInfoList, boolean force);
 }
