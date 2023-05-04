@@ -2,6 +2,7 @@ package com.github.xcfyl.fabriccc.invoker.config;
 
 import com.github.xcfyl.fabriccc.invoker.client.FabricCaClient;
 import com.github.xcfyl.fabriccc.invoker.client.FabricCryptoClient;
+import com.github.xcfyl.fabriccc.invoker.wallet.WalletQueryInterceptor;
 import com.github.xcfyl.fabriccc.invoker.wallet.WalletRemoveInterceptor;
 import com.github.xcfyl.fabriccc.invoker.wallet.impl.FabricDbWallet;
 import com.github.xcfyl.fabriccc.invoker.condition.ContainsDbTypeWalletCondition;
@@ -45,15 +46,21 @@ public class ChainCodeAutoConfiguration {
                                          ApplicationContext applicationContext) {
         ObjectProvider<WalletRemoveInterceptor> removeInterceptorObjectProvider = applicationContext.getBeanProvider(WalletRemoveInterceptor.class);
         ObjectProvider<WalletAddInterceptor> addInterceptorObjectProvider = applicationContext.getBeanProvider(WalletAddInterceptor.class);
+        ObjectProvider<WalletQueryInterceptor> queryInterceptorObjectProvider = applicationContext.getBeanProvider(WalletQueryInterceptor.class);
 
         WalletRemoveInterceptor removeInterceptor = removeInterceptorObjectProvider.getIfAvailable();
         WalletAddInterceptor addInterceptor = addInterceptorObjectProvider.getIfAvailable();
+        WalletQueryInterceptor queryInterceptor = queryInterceptorObjectProvider.getIfAvailable();
+
         FabricDbWallet fabricDbWallet = new FabricDbWallet(context, jdbcTemplate, properties);
         if (removeInterceptor != null) {
             fabricDbWallet.setWalletRemoveInterceptor(removeInterceptor);
         }
         if (addInterceptor != null) {
             fabricDbWallet.setWalletAddInterceptor(addInterceptor);
+        }
+        if (queryInterceptor != null) {
+            fabricDbWallet.setWalletQueryInterceptor(queryInterceptor);
         }
         return fabricDbWallet;
     }
