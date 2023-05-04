@@ -37,6 +37,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
     protected WalletAddInterceptor walletAddInterceptor;
 
     protected WalletRemoveInterceptor walletRemoveInterceptor;
+    protected WalletQueryInterceptor walletQueryInterceptor;
 
     protected PrivateKey privateKey;
 
@@ -53,6 +54,10 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
 
     public void setWalletRemoveInterceptor(WalletRemoveInterceptor walletRemoveInterceptor) {
         this.walletRemoveInterceptor = walletRemoveInterceptor;
+    }
+
+    public void setWalletQueryInterceptor(WalletQueryInterceptor walletQueryInterceptor) {
+        this.walletQueryInterceptor = walletQueryInterceptor;
     }
 
     public DbWalletConfigProperties getWalletConfig() {
@@ -89,22 +94,38 @@ public abstract class FabricAbstractWallet implements IFabricWallet, Application
 
     @Override
     public List<WalletInfo> listWallet() {
-        return doListWallet();
+        List<WalletInfo> walletInfos = doListWallet();
+        if (walletQueryInterceptor != null) {
+            return walletQueryInterceptor.filterWalletInfo(walletInfos);
+        }
+        return walletInfos;
     }
 
     @Override
     public List<WalletInfo> listWallet(WalletStatus status) {
-        return doListWallet(status);
+        List<WalletInfo> walletInfos = doListWallet(status);
+        if (walletQueryInterceptor != null) {
+            return walletQueryInterceptor.filterWalletInfo(walletInfos);
+        }
+        return walletInfos;
     }
 
     @Override
     public List<WalletInfo> listWallet(String username, WalletStatus status) {
-        return doListWallet(username, status);
+        List<WalletInfo> walletInfos = doListWallet(username, status);
+        if (walletQueryInterceptor != null) {
+            return walletQueryInterceptor.filterWalletInfo(walletInfos);
+        }
+        return walletInfos;
     }
 
     @Override
     public List<WalletInfo> listWallet(String username) {
-        return doListWallet(username);
+        List<WalletInfo> walletInfos = doListWallet(username);
+        if (walletQueryInterceptor != null) {
+            return walletQueryInterceptor.filterWalletInfo(walletInfos);
+        }
+        return walletInfos;
     }
 
     @Override
