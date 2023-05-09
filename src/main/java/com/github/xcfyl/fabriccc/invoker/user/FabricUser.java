@@ -1,5 +1,6 @@
 package com.github.xcfyl.fabriccc.invoker.user;
 
+import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hyperledger.fabric.sdk.Enrollment;
@@ -11,6 +12,7 @@ import java.util.Set;
  * @author xcfyl
  */
 @Setter
+@Getter
 @ToString
 public class FabricUser implements User {
     private String name;
