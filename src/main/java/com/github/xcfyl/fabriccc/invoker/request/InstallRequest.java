@@ -16,7 +16,7 @@ import java.util.Collection;
 public class InstallRequest extends AbstractFabricRequest<Boolean> {
 
     public InstallRequest(FabricContext context, String channelName, long timeout) {
-        super(context.getAdmin(), context, channelName, Boolean.class, null, timeout);
+        super(context.getAdmin(), context, channelName, Boolean.class, null, null, timeout);
     }
 
     @Override

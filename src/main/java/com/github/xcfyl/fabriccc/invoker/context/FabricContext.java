@@ -1,6 +1,5 @@
 package com.github.xcfyl.fabriccc.invoker.context;
 
-import cn.hutool.core.util.StrUtil;
 import com.github.xcfyl.fabriccc.invoker.client.FabricCaClient;
 import com.github.xcfyl.fabriccc.invoker.client.FabricCryptoClient;
 import com.github.xcfyl.fabriccc.invoker.config.FabricConfigProperties;
@@ -9,12 +8,7 @@ import com.github.xcfyl.fabriccc.invoker.config.PeerConfig;
 import com.github.xcfyl.fabriccc.invoker.config.UserConfig;
 import com.github.xcfyl.fabriccc.invoker.utils.CommonUtils;
 import lombok.Data;
-import org.hyperledger.fabric.sdk.HFClient;
-import org.hyperledger.fabric.sdk.Orderer;
-import org.hyperledger.fabric.sdk.Peer;
-import org.hyperledger.fabric.sdk.User;
-import org.hyperledger.fabric.sdk.security.CryptoSuite;
-import org.hyperledger.fabric_ca.sdk.HFCAClient;
+import org.hyperledger.fabric.sdk.*;
 
 import java.util.*;
 
@@ -23,15 +17,6 @@ import java.util.*;
  */
 @Data
 public class FabricContext {
-    /**
-     * 存放peerName和peer对象的映射
-     */
-    private final Map<String, Peer> peerMap;
-
-    /**
-     * 存放ordererName和orderer对象的映射
-     */
-    private final Map<String, Orderer> ordererMap;
 
     /**
      * 存放当前Fabric SDK Wrapper的所有配置信息
@@ -42,13 +27,6 @@ public class FabricContext {
      * 存放当前的admin对象
      */
     private User admin;
-
-    /**
-     * 存放当前admin对象创建好的hfClient对象
-     */
-    private HFClient hfClientOfAdmin;
-
-    private HFCAClient hfCAClient;
 
     private FabricCryptoClient fabricCryptoClient;
 
@@ -61,20 +39,6 @@ public class FabricContext {
         admin = loadAdmin();
         if (admin == null) {
             throw new RuntimeException("加载admin失败");
-        }
-
-        hfClientOfAdmin = CommonUtils.getHfClient(admin);
-
-        hfCAClient = loadHfCaClient();
-
-        peerMap = loadPeerMap(hfClientOfAdmin);
-        if (peerMap == null) {
-            throw new RuntimeException("加载peer对象失败");
-        }
-
-        ordererMap = loadOrdererMap(hfClientOfAdmin);
-        if (ordererMap == null) {
-            throw new RuntimeException("加载orderer对象失败");
         }
 
         fabricCryptoClient = new FabricCryptoClient(this);
@@ -95,35 +59,57 @@ public class FabricContext {
         return fabricCryptoClient;
     }
 
-    private HFCAClient loadHfCaClient() {
-        CryptoSuite cryptoSuite;
-        try {
-            cryptoSuite = CryptoSuite.Factory.getCryptoSuite();
-        } catch (Exception e) {
-            return null;
-        }
-
-        String url = fabricConfig.getCaConfig().getUrl();
-        if (StrUtil.isBlank(url)) {
-            return null;
-        }
-
-        HFCAClient hfcaClient;
-        try {
-            hfcaClient = HFCAClient.createNewInstance(url, null);
-        } catch (Exception e) {
-            return null;
-        }
-        hfcaClient.setCryptoSuite(cryptoSuite);
-        return hfcaClient;
-    }
-
+    /**
+     * 每次调用该方法都是创建新的peer列表
+     *
+     * @return
+     */
     public List<Peer> getPeers() {
+        HFClient hfClient = CommonUtils.getHfClient(admin);
+        Map<String, Peer> peerMap = loadPeerMap(hfClient);
+        if (peerMap == null || peerMap.size() == 0) {
+            return null;
+        }
         return new ArrayList<>(peerMap.values());
     }
 
+    public Channel getChannel(String channelName, User user) {
+        HFClient hfClient = CommonUtils.getHfClient(user);
+        List<Peer> peers = getPeers();
+        List<Orderer> orderers = getOrderers();
+
+        if (peers == null || orderers == null) {
+            throw new RuntimeException("channel创建失败");
+        }
+
+        try {
+            Channel channel = hfClient.newChannel(channelName);
+            for (Orderer orderer : orderers) {
+                channel.addOrderer(orderer);
+            }
+            for (Peer peer : peers) {
+                channel.addPeer(peer);
+            }
+
+            channel.initialize();
+            return channel;
+        } catch (Exception e) {
+            throw new RuntimeException("channel创建失败");
+        }
+    }
+
+    /**
+     * 每次调用该方法都是创建新的Orderer
+     *
+     * @return
+     */
     public List<Orderer> getOrderers() {
-        return new ArrayList<>(ordererMap.values());
+        HFClient hfClient = CommonUtils.getHfClient(admin);
+        Map<String, Orderer> orderMap = loadOrdererMap(hfClient);
+        if (orderMap == null || orderMap.size() == 0) {
+            return null;
+        }
+        return new ArrayList<>(orderMap.values());
     }
 
     /**

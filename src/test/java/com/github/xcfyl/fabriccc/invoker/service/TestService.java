@@ -42,15 +42,16 @@ public class TestService {
     @Test
     public void testInvokeByJava() {
         InvokeRequest<String> invokeRequest = new InvokeRequest<>(fabricContext, fabricContext.getAdmin(),
-                String.class, "mychannel", "test", new String[]{"1", "2"},
-                (result, e) -> {
-                    // 这里编写本次调用的结果处理逻辑
-                    if (e != null) {
-                        // 说明发生了异常
-                        throw new RuntimeException(e.getMessage());
-                    } else {
-                        // 可以正常处理结果
-                        System.out.println(result);
+                String.class, String.class, "mychannel", "test", new String[]{"1", "2"},
+                new ResultHandler<String>() {
+                    @Override
+                    public void handleSuccess(String result) {
+
+                    }
+
+                    @Override
+                    public void handleFailure(Throwable throwable) {
+
                     }
                 }, 1000000);
         // 这里需要说明的是，invoke是异步调用，因此他的返回值是没有意义的
@@ -61,7 +62,7 @@ public class TestService {
     @Test
     public void testQueryByJava() {
         QueryRequest<String> queryRequest = new QueryRequest<>(fabricContext.getAdmin(),
-                fabricContext, String.class, "mychannel", "test",
+                fabricContext, String.class, String.class, "mychannel", "test",
                 new String[]{"1", "2"}, 1000000);
         // query是同步调用，因此query方法可以直接接收返回值
         String send = queryRequest.send();
@@ -72,12 +73,13 @@ public class TestService {
     public void testInitByJava() {
         InitRequest initRequest = new InitRequest(fabricContext, "mychannel", new ResultHandler<String>() {
             @Override
-            public void handle(String result, Throwable e) {
-                if (e != null) {
-                    throw new RuntimeException(e.getMessage());
-                } else {
-                    System.out.println(result);
-                }
+            public void handleSuccess(String result) {
+
+            }
+
+            @Override
+            public void handleFailure(Throwable throwable) {
+
             }
         }, 10000);
         // init同invoke也是异步调用，因此不要接收返回值，该返回值始终为null

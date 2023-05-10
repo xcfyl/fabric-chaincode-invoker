@@ -20,9 +20,9 @@ public class InvokeRequest<T> extends AbstractFabricRequest<T> {
     private final String funcName;
     private final String[] args;
 
-    public InvokeRequest(FabricContext context, User user, Class<T> resultClazz, String channelName,
+    public InvokeRequest(FabricContext context, User user, Class<T> resultClazz, Class<?> genericClass, String channelName,
                          String funcName, String[] args, ResultHandler<T> resultHandler, long timeout) {
-        super(user, context, channelName, resultClazz, resultHandler, timeout);
+        super(user, context, channelName, resultClazz, genericClass, resultHandler, timeout);
         this.funcName = funcName;
         this.args = args;
     }

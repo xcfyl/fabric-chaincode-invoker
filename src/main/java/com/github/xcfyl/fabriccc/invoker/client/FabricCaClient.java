@@ -1,10 +1,11 @@
 package com.github.xcfyl.fabriccc.invoker.client;
 
 import cn.hutool.core.util.StrUtil;
-import com.github.xcfyl.fabriccc.invoker.user.FabricUser;
 import com.github.xcfyl.fabriccc.invoker.context.FabricContext;
+import com.github.xcfyl.fabriccc.invoker.user.FabricUser;
 import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.User;
+import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 
@@ -15,12 +16,15 @@ public class FabricCaClient {
     private final FabricContext context;
     private final User caAdmin;
 
+    private final HFCAClient hfcaClient;
+
     public FabricCaClient(FabricContext context) {
         this.context = context;
         FabricUser admin = (FabricUser) context.getAdmin();
         String adminName = admin.getName();
         String password = admin.getPassword();
         caAdmin = enrollUser(adminName, password);
+        hfcaClient = loadHfCaClient();
     }
 
     /**
@@ -32,7 +36,6 @@ public class FabricCaClient {
      */
     public boolean registerUser(String username, String password) {
         try {
-            HFCAClient hfcaClient = context.getHfCAClient();
             if (hfcaClient == null) {
                 return false;
             }
@@ -48,6 +51,29 @@ public class FabricCaClient {
         }
     }
 
+    private HFCAClient loadHfCaClient() {
+        CryptoSuite cryptoSuite;
+        try {
+            cryptoSuite = CryptoSuite.Factory.getCryptoSuite();
+        } catch (Exception e) {
+            return null;
+        }
+
+        String url = context.getFabricConfig().getCaConfig().getUrl();
+        if (StrUtil.isBlank(url)) {
+            return null;
+        }
+
+        HFCAClient hfcaClient;
+        try {
+            hfcaClient = HFCAClient.createNewInstance(url, null);
+        } catch (Exception e) {
+            return null;
+        }
+        hfcaClient.setCryptoSuite(cryptoSuite);
+        return hfcaClient;
+    }
+
     /**
      * 撤销某个用户的证书
      *
@@ -56,7 +82,6 @@ public class FabricCaClient {
      */
     public boolean revokeUser(String revokedUser) {
         try {
-            HFCAClient hfcaClient = context.getHfCAClient();
             if (hfcaClient == null) {
                 return false;
             }
@@ -89,13 +114,12 @@ public class FabricCaClient {
      * @return
      */
     public User enrollUser(String username, String password) {
-        HFCAClient client = context.getHfCAClient();
-        if (client == null) {
+        if (hfcaClient == null) {
             return null;
         }
         Enrollment enrollment;
         try {
-            enrollment = client.enroll(username, password);
+            enrollment = hfcaClient.enroll(username, password);
         } catch (Exception e) {
             return null;
         }

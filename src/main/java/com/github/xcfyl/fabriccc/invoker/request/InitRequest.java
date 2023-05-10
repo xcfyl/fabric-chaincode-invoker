@@ -20,7 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class InitRequest extends AbstractFabricRequest<String> {
     public InitRequest(FabricContext context, String channelName, ResultHandler<String> resultHandler, long timeout) {
-        super(context.getAdmin(), context, channelName, String.class, resultHandler, timeout);
+        super(context.getAdmin(), context, channelName, String.class, null, resultHandler, timeout);
     }
 
     @Override

@@ -58,11 +58,11 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
     }
 
     @SuppressWarnings({"rawuse", "unchecked"})
-    private String[] parseArgs(Object[] args) {
+    private String[] parseArgs(Object[] args, Class<?> genericClass) {
         String[] chainCodeArgs = new String[args.length - 1];
         for (int i = 1; i < args.length; i++) {
             // 怎么解决参数是数组类型啊
-            TypeParseHandler<Object> typeParseHandler = (TypeParseHandler<Object>) RESULT_PARSE_HANDLER_MAP.getOrDefault(args[i].getClass(), new JsonParseHandler<>(args[i].getClass()));
+            TypeParseHandler<Object> typeParseHandler = (TypeParseHandler<Object>) RESULT_PARSE_HANDLER_MAP.getOrDefault(args[i].getClass(), new JsonParseHandler<>(args[i].getClass(), genericClass));
             chainCodeArgs[i - 1] = typeParseHandler.get(args[i]);
         }
         return chainCodeArgs;
@@ -89,14 +89,14 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                 if (method.isAnnotationPresent(Invoke.class)) {
                     // 说明当前方法执行的是invoke调用
                     log.debug("当前执行的是invoke调用");
-                    String[] chainCodeArgs = parseArgs(args);
-                    log.debug("invoke的参数为: " + objectMapper.writeValueAsString(chainCodeArgs));
-
                     User user = (User) args[0];
                     ChainCodeProxy annotation = targetClass.getAnnotation(ChainCodeProxy.class);
                     String channelName = annotation.channelName();
                     String funcName = method.getName();
                     Invoke invoke = method.getAnnotation(Invoke.class);
+                    Class<?> genericClass = invoke.genericClass();
+                    String[] chainCodeArgs = parseArgs(args, genericClass);
+                    log.debug("invoke的参数为: " + objectMapper.writeValueAsString(chainCodeArgs));
                     Class<? extends ResultHandler<?>> handlerClass = invoke.resultHandler();
                     ResultHandler resultHandler = handlerClass.getConstructor().newInstance();
                     Type[] types = handlerClass.getGenericInterfaces();
@@ -115,13 +115,11 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                     long timeout = invoke.timeout();
                     // 创建Invoke请求
                     InvokeRequest invokeRequest = new InvokeRequest<>(fabricContext, user, resultClass,
-                            channelName, funcName, chainCodeArgs, resultHandler, timeout);
+                            genericClass, channelName, funcName, chainCodeArgs, resultHandler, timeout);
                     invokeRequest.send();
                 } else if (method.isAnnotationPresent(Query.class)) {
                     // 说明当前方法执行的是query调用
                     log.debug("当前执行的是query调用");
-                    String[] chainCodeArgs = parseArgs(args);
-                    log.debug("query的参数是: {}", objectMapper.writeValueAsString(chainCodeArgs));
 
                     User user = (User) args[0];
                     Class returnType = method.getReturnType();
@@ -129,10 +127,13 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                     String channelName = annotation.channelName();
                     String funcName = method.getName();
                     Query query = method.getAnnotation(Query.class);
+                    Class<?> genericClass = query.genericClass();
+                    String[] chainCodeArgs = parseArgs(args, genericClass);
+                    log.debug("query的参数是: {}", objectMapper.writeValueAsString(chainCodeArgs));
                     long timeout = query.timeout();
                     // 创建Invoke请求
                     QueryRequest queryRequest = new QueryRequest(user, fabricContext, returnType,
-                            channelName, funcName, chainCodeArgs, timeout);
+                            genericClass, channelName, funcName, chainCodeArgs, timeout);
                     return queryRequest.send();
                 } else if (method.isAnnotationPresent(Init.class)) {
                     // 说明当前执行的是init调用

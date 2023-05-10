@@ -21,32 +21,6 @@ import java.util.Properties;
  * @author 西城风雨楼
  */
 public class CommonUtils {
-    public static Channel getChannel(String channelName, FabricContext context) {
-        HFClient hfClient = context.getHfClientOfAdmin();
-        List<Peer> peers = context.getPeers();
-        List<Orderer> orderers = context.getOrderers();
-
-        if (peers == null || orderers == null || hfClient == null) {
-            throw new RuntimeException("channel创建失败");
-        }
-
-        try {
-            Channel channel = hfClient.newChannel(channelName);
-            for (Orderer orderer : orderers) {
-                channel.addOrderer(orderer);
-            }
-            for (Peer peer : peers) {
-                channel.addPeer(peer);
-            }
-
-            channel.initialize();
-            return channel;
-        } catch (Exception e) {
-            throw new RuntimeException("channel创建失败");
-        }
-    }
-
-
     /**
      * 从本地文件中加载admin对象
      *

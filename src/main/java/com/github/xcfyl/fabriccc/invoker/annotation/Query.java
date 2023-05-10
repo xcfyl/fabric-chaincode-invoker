@@ -12,4 +12,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Query {
     int timeout() default 10000;
+    Class<?> genericClass() default Object.class;
 }

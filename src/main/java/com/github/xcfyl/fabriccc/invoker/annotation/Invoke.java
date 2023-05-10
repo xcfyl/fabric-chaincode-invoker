@@ -16,4 +16,5 @@ public @interface Invoke {
     int timeout() default 10000;
     // 结果处理器，因为Invoke调用是异步的
     Class<? extends ResultHandler<?>> resultHandler();
+    Class<?> genericClass() default Object.class;
 }

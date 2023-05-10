@@ -26,6 +26,8 @@ public abstract class AbstractFabricRequest<T> implements IFabricRequest<T> {
 
     protected final Class<?> resultClazz;
 
+    protected final Class<?> genericClass;
+
     protected final long timeout;
 
     @SuppressWarnings("rawuse")
@@ -48,19 +50,20 @@ public abstract class AbstractFabricRequest<T> implements IFabricRequest<T> {
     }
 
     public AbstractFabricRequest(User user, FabricContext fabricContext, String channelName,
-                                 Class<T> resultClazz, ResultHandler<T> resultHandler, long timeout) {
-        channel = CommonUtils.getChannel(channelName, fabricContext);
+                                 Class<T> resultClazz,Class<?> genericClass, ResultHandler<T> resultHandler, long timeout) {
+        channel = fabricContext.getChannel(channelName, user);
         this.fabricContext = fabricContext;
         this.hfClient = CommonUtils.getHfClient(user);
         this.resultClazz = resultClazz;
         this.resultHandler = resultHandler;
         this.timeout = timeout;
+        this.genericClass = genericClass;
     }
 
     @SuppressWarnings("unchecked")
     protected T parseResult(byte[] data) {
         TypeParseHandler<?> parser = RESULT_PARSE_HANDLER_MAP.getOrDefault(resultClazz,
-                new JsonParseHandler<>((Class<T>) resultClazz));
+                new JsonParseHandler<>((Class<T>) resultClazz, genericClass));
         return (T) parser.parse(data);
     }
 
