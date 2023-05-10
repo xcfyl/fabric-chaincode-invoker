@@ -88,7 +88,7 @@ public abstract class AbstractFabricRequest<T> implements IFabricRequest<T> {
                 // 否则就是两个异步的请求，这个时候，通过ResultHandler传递结果回去
                 if (resultHandler != null) {
                     channel.shutdown(false);
-                    resultHandler.handle(parseResult(null), new RequestAbortedException("peer返回的状态码不全是200"));
+                    resultHandler.handleFailure(new RequestAbortedException("peer返回的状态码不全是200"));
                     return null;
                 }
             }
@@ -108,12 +108,12 @@ public abstract class AbstractFabricRequest<T> implements IFabricRequest<T> {
                 // 说明这两个需要异步处理结果
                 channel.sendTransaction(responses).thenAccept(transactionEvent -> {
                     if (resultHandler != null) {
-                        resultHandler.handle(result, null);
+                        resultHandler.handleSuccess(result);
                     }
                     channel.shutdown(false);
                 }).exceptionally(throwable -> {
                     if (resultHandler != null) {
-                        resultHandler.handle(parseResult(null), throwable);
+                        resultHandler.handleFailure(throwable);
                     }
                     channel.shutdown(false);
                     return null;
@@ -128,7 +128,7 @@ public abstract class AbstractFabricRequest<T> implements IFabricRequest<T> {
             // 走到这里需要判断当前是什么类型的请求
             if (this instanceof InvokeRequest || this instanceof InitRequest) {
                 if (resultHandler != null) {
-                    resultHandler.handle(parseResult(null), e);
+                    resultHandler.handleFailure(e);
                 }
             }
             channel.shutdown(false);
