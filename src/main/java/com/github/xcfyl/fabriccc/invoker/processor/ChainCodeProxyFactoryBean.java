@@ -61,6 +61,7 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
     private String[] parseArgs(Object[] args) {
         String[] chainCodeArgs = new String[args.length - 1];
         for (int i = 1; i < args.length; i++) {
+            // 怎么解决参数是数组类型啊
             TypeParseHandler<Object> typeParseHandler = (TypeParseHandler<Object>) RESULT_PARSE_HANDLER_MAP.getOrDefault(args[i].getClass(), new JsonParseHandler<>(args[i].getClass()));
             chainCodeArgs[i - 1] = typeParseHandler.get(args[i]);
         }
