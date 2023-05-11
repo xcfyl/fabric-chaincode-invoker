@@ -132,10 +132,26 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                     if (types.length != 1) {
                         throw new BeanCreationException("ResultHandler的参数错误");
                     }
-                    Class resultClass;
+                    Class resultClass = null;
                     if (types[0] instanceof ParameterizedType) {
                         ParameterizedType type = (ParameterizedType) types[0];
-                        resultClass = (Class) type.getActualTypeArguments()[0];
+                        Type argument = type.getActualTypeArguments()[0];
+                        if (argument instanceof Class) {
+                            // 如果发现handler的泛型参数是一个Class
+                            resultClass = (Class) type.getActualTypeArguments()[0];
+                        } else if (argument instanceof ParameterizedType) {
+                            // 如果发现handler的泛型参数还是一个泛型参数
+                            ParameterizedType parameterizedType = (ParameterizedType) argument;
+                            // 那么找到该泛型参数的实际类型
+                            Type actualTypeArguments = parameterizedType.getActualTypeArguments()[0];
+                            resultClass = (Class) parameterizedType.getRawType();
+                            if (actualTypeArguments instanceof Class) {
+                                // 这是泛型类型，走到这里说明这是一个List
+                                genericClass = (Class) actualTypeArguments;
+                            } else {
+                                throw new BeanCreationException("resultHandler的泛型参数错误");
+                            }
+                        }
                     } else {
                         throw new BeanCreationException("Invoke调用失败");
                     }
