@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.PrivateKey;
 import java.util.Collection;
-import java.util.List;
 import java.util.Properties;
 
 /**
@@ -78,7 +77,7 @@ public class CommonUtils {
 
     public static ChaincodeID getChainCodeId(FabricContext context) {
         ChaincodeID.Builder builder = ChaincodeID.newBuilder();
-        ChainCodeConfig chainCodeConfig = context.getFabricConfig().getChainCodeConfig();
+        ChainCodeConfig chainCodeConfig = context.getConfig().getChainCodeConfig();
         builder.setName(chainCodeConfig.getName());
         builder.setPath(chainCodeConfig.getProjectName());
         builder.setVersion(chainCodeConfig.getVersion());

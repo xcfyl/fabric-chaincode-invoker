@@ -1,12 +1,10 @@
 package com.github.xcfyl.fabriccc.invoker.config;
 
-import com.github.xcfyl.fabriccc.invoker.client.FabricCaClient;
-import com.github.xcfyl.fabriccc.invoker.client.FabricCryptoClient;
+import com.github.xcfyl.fabriccc.invoker.context.FabricContext;
 import com.github.xcfyl.fabriccc.invoker.wallet.WalletQueryInterceptor;
 import com.github.xcfyl.fabriccc.invoker.wallet.WalletRemoveInterceptor;
 import com.github.xcfyl.fabriccc.invoker.wallet.impl.FabricDbWallet;
 import com.github.xcfyl.fabriccc.invoker.condition.ContainsDbTypeWalletCondition;
-import com.github.xcfyl.fabriccc.invoker.context.FabricContext;
 import com.github.xcfyl.fabriccc.invoker.wallet.WalletAddInterceptor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -23,19 +21,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @Configuration
 @EnableConfigurationProperties({FabricConfigProperties.class, DbWalletConfigProperties.class})
 public class ChainCodeAutoConfiguration {
+
     @Bean
     public FabricContext fabricContext(FabricConfigProperties properties) {
         return new FabricContext(properties);
-    }
-
-    @Bean
-    public FabricCryptoClient fabricCryptoClient(FabricContext fabricContext) {
-        return fabricContext.getFabricCryptoClient();
-    }
-
-    @Bean
-    public FabricCaClient fabricCaClient(FabricContext fabricContext) {
-        return fabricContext.getFabricCaClient();
     }
 
     @Bean

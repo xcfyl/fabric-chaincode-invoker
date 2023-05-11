@@ -64,10 +64,6 @@ public abstract class FabricAbstractWallet implements IFabricWallet  {
         this.walletQueryInterceptor = walletQueryInterceptor;
     }
 
-    public DbWalletConfigProperties getWalletConfig() {
-        return walletConfig;
-    }
-
     @Override
     public boolean clearWallet() {
         List<WalletInfo> walletInfos = listWallet();
@@ -142,7 +138,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet  {
         String username = fabricUser.getName();
         String password = fabricUser.getPassword();
         String mspId = fabricUser.getMspId();
-        byte[] publicKeyHash = fabricContext.getFabricCryptoClient().hash(publicKey.getBytes());
+        byte[] publicKeyHash = fabricContext.hash(publicKey.getBytes());
         Date createTime = DateTransUtils.localDateToUtilDate(now);
         if (expiredTime == null) {
             expiredTime = DateTransUtils.localDateToUtilDate(now.plusYears(3));

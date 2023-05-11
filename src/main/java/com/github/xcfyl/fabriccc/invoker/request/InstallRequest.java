@@ -1,7 +1,7 @@
 package com.github.xcfyl.fabriccc.invoker.request;
 
-import com.github.xcfyl.fabriccc.invoker.utils.CommonUtils;
 import com.github.xcfyl.fabriccc.invoker.context.FabricContext;
+import com.github.xcfyl.fabriccc.invoker.utils.CommonUtils;
 import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.InstallProposalRequest;
 import org.hyperledger.fabric.sdk.ProposalResponse;
@@ -15,8 +15,8 @@ import java.util.Collection;
  */
 public class InstallRequest extends AbstractFabricRequest<Boolean> {
 
-    public InstallRequest(FabricContext context, String channelName, long timeout) {
-        super(context.getAdmin(), context, channelName, Boolean.class, null, null, timeout);
+    public InstallRequest(FabricContext context, long timeout) {
+        super(context.getAdmin(), context, Boolean.class, null, null, timeout);
     }
 
     @Override
@@ -36,7 +36,7 @@ public class InstallRequest extends AbstractFabricRequest<Boolean> {
         installRequest.setProposalWaitTime(timeout);
 
         Collection<ProposalResponse> responses;
-        installRequest.setChaincodeSourceLocation(new File(fabricContext.getGopath()));
+        installRequest.setChaincodeSourceLocation(new File(fabricContext.getConfig().getChainCodeConfig().getGopath()));
         installRequest.setProposalWaitTime(timeout);
         responses = hfClient.sendInstallProposal(installRequest, channel.getPeers());
         return responses;

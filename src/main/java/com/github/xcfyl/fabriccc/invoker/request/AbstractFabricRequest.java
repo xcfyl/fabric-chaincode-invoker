@@ -1,8 +1,8 @@
 package com.github.xcfyl.fabriccc.invoker.request;
 
+import com.github.xcfyl.fabriccc.invoker.context.FabricContext;
 import com.github.xcfyl.fabriccc.invoker.handler.impl.*;
 import com.github.xcfyl.fabriccc.invoker.utils.CommonUtils;
-import com.github.xcfyl.fabriccc.invoker.context.FabricContext;
 import com.github.xcfyl.fabriccc.invoker.handler.TypeParseHandler;
 import org.apache.http.impl.execchain.RequestAbortedException;
 import org.hyperledger.fabric.sdk.*;
@@ -48,9 +48,9 @@ public abstract class AbstractFabricRequest<T> implements IFabricRequest<T> {
         RESULT_PARSE_HANDLER_MAP.put(boolean.class, new BooleanParseHandler());
     }
 
-    public AbstractFabricRequest(User user, FabricContext fabricContext, String channelName,
-                                 Class<T> resultClazz,Class<?> genericClass, ResultHandler<T> resultHandler, long timeout) {
-        channel = fabricContext.getChannel(channelName, user);
+    public AbstractFabricRequest(User user, FabricContext fabricContext, Class<T> resultClazz,
+                                 Class<?> genericClass, ResultHandler<T> resultHandler, long timeout) {
+        channel = fabricContext.getChannel();
         this.fabricContext = fabricContext;
         this.hfClient = CommonUtils.getHfClient(user);
         this.resultClazz = resultClazz;
@@ -76,20 +76,17 @@ public abstract class AbstractFabricRequest<T> implements IFabricRequest<T> {
                 if (this instanceof InstallRequest) {
                     // 如果当前是一个安装请求，该请求是同步的请求
                     // 默认情况下，返回Boolean
-                    channel.shutdown(false);
                     return (T) Boolean.valueOf("false");
                 }
                 // 否则的话，判断是否是Query请求
                 if (this instanceof QueryRequest) {
                     // 如果是Query请求，那么该请求同样是一个同步请求，返回null
                     // 表示请求结果出错
-                    channel.shutdown(false);
                     return null;
                 }
 
                 // 否则就是两个异步的请求，这个时候，通过ResultHandler传递结果回去
                 if (resultHandler != null) {
-                    channel.shutdown(false);
                     resultHandler.handleFailure(new RequestAbortedException("peer返回的状态码不全是200"));
                     return null;
                 }
@@ -98,7 +95,6 @@ public abstract class AbstractFabricRequest<T> implements IFabricRequest<T> {
             // 走到这里说明至少所有的peer返回的数据是一样的
             if (this instanceof InstallRequest) {
                 // 如果当前是Install请求，那么走到这里说明已经安装成功了，那么直接返回true
-                channel.shutdown(false);
                 return (T) Boolean.valueOf("true");
             }
 
@@ -112,19 +108,16 @@ public abstract class AbstractFabricRequest<T> implements IFabricRequest<T> {
                     if (resultHandler != null) {
                         resultHandler.handleSuccess(result);
                     }
-                    channel.shutdown(false);
                 }).exceptionally(throwable -> {
                     if (resultHandler != null) {
                         resultHandler.handleFailure(throwable);
                     }
-                    channel.shutdown(false);
                     return null;
                 });
                 return null;
             }
 
             // 走到这里说明只可能是query请求了，同步请求，直接返回结果
-            channel.shutdown(false);
             return result;
         } catch (Exception e) {
             // 走到这里需要判断当前是什么类型的请求
@@ -133,7 +126,6 @@ public abstract class AbstractFabricRequest<T> implements IFabricRequest<T> {
                     resultHandler.handleFailure(e);
                 }
             }
-            channel.shutdown(false);
         }
         return null;
     }

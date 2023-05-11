@@ -109,8 +109,6 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                     // 说明当前方法执行的是invoke调用
                     log.debug("当前执行的是invoke调用");
                     User user = (User) args[0];
-                    ChainCodeProxy annotation = targetClass.getAnnotation(ChainCodeProxy.class);
-                    String channelName = annotation.channelName();
                     String funcName = method.getName();
                     Invoke invoke = method.getAnnotation(Invoke.class);
                     Class<?> genericClass = resultType == null ? invoke.genericClass() : resultType;
@@ -163,15 +161,13 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                     long timeout = invoke.timeout();
                     // 创建Invoke请求
                     InvokeRequest invokeRequest = new InvokeRequest<>(fabricContext, user, resultClass,
-                            genericClass, channelName, funcName, chainCodeArgs, resultHandler, timeout);
+                            genericClass, funcName, chainCodeArgs, resultHandler, timeout);
                     invokeRequest.send();
                 } else if (method.isAnnotationPresent(Query.class)) {
                     // 说明当前方法执行的是query调用
                     log.debug("当前执行的是query调用");
 
                     User user = (User) args[0];
-                    ChainCodeProxy annotation = targetClass.getAnnotation(ChainCodeProxy.class);
-                    String channelName = annotation.channelName();
                     String funcName = method.getName();
                     Query query = method.getAnnotation(Query.class);
                     Class<?> genericClass = resultType == null ? query.genericClass() : resultType;
@@ -180,27 +176,23 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                     long timeout = query.timeout();
                     // 创建Invoke请求
                     QueryRequest queryRequest = new QueryRequest(user, fabricContext, returnType,
-                            genericClass, channelName, funcName, chainCodeArgs, timeout);
+                            genericClass, funcName, chainCodeArgs, timeout);
                     return queryRequest.send();
                 } else if (method.isAnnotationPresent(Init.class)) {
                     // 说明当前执行的是init调用
                     log.debug("当前执行的是init调用");
-                    ChainCodeProxy annotation = targetClass.getAnnotation(ChainCodeProxy.class);
-                    String channelName = annotation.channelName();
                     Init init = method.getAnnotation(Init.class);
                     Class<? extends ResultHandler<?>> handlerClass = init.resultHandler();
                     ResultHandler resultHandler = handlerClass.getConstructor().newInstance();
                     long timeout = init.timeout();
-                    InitRequest request = new InitRequest(fabricContext, channelName, resultHandler, timeout);
+                    InitRequest request = new InitRequest(fabricContext, resultHandler, timeout);
                     return request.send();
                 } else if (method.isAnnotationPresent(Install.class)) {
                     // 说明当前执行的是Install调用
                     log.debug("当前执行的是install调用");
-                    ChainCodeProxy annotation = targetClass.getAnnotation(ChainCodeProxy.class);
-                    String channelName = annotation.channelName();
                     Install install = method.getAnnotation(Install.class);
                     long timeout = install.timeout();
-                    InstallRequest installRequest = new InstallRequest(fabricContext, channelName, timeout);
+                    InstallRequest installRequest = new InstallRequest(fabricContext, timeout);
                     return installRequest.send();
                 }
                 return null;

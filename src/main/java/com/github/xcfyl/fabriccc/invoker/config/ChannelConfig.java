@@ -3,7 +3,6 @@ package com.github.xcfyl.fabriccc.invoker.config;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
@@ -12,23 +11,21 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@ConfigurationProperties("fabric.context")
-public class FabricConfigProperties {
+public class ChannelConfig {
     /**
-     * CA相关的配置信息
+     * 通道的名称
      */
-    @NestedConfigurationProperty
-    private CAConfig caConfig;
+    private String channelName;
 
     /**
-     * 链码相关的配置信息
+     * 当前通道关联的peer
      */
     @NestedConfigurationProperty
-    private ChainCodeConfig chainCodeConfig;
+    private PeerConfig[] peerConfigs;
 
     /**
-     * 通道配置
+     * 当前通道关联的orderer
      */
     @NestedConfigurationProperty
-    private ChannelConfig channelConfig;
+    private OrdererConfig[] ordererConfigs;
 }

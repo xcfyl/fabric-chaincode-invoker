@@ -1,190 +1,265 @@
 package com.github.xcfyl.fabriccc.invoker.context;
 
-import com.github.xcfyl.fabriccc.invoker.client.FabricCaClient;
-import com.github.xcfyl.fabriccc.invoker.client.FabricCryptoClient;
+import cn.hutool.core.util.StrUtil;
+import com.github.xcfyl.fabriccc.invoker.config.CAConfig;
 import com.github.xcfyl.fabriccc.invoker.config.FabricConfigProperties;
 import com.github.xcfyl.fabriccc.invoker.config.OrdererConfig;
 import com.github.xcfyl.fabriccc.invoker.config.PeerConfig;
-import com.github.xcfyl.fabriccc.invoker.config.UserConfig;
+import com.github.xcfyl.fabriccc.invoker.user.FabricUser;
 import com.github.xcfyl.fabriccc.invoker.utils.CommonUtils;
-import lombok.Data;
 import org.hyperledger.fabric.sdk.*;
+import org.hyperledger.fabric.sdk.security.CryptoPrimitives;
+import org.hyperledger.fabric.sdk.security.CryptoSuite;
+import org.hyperledger.fabric_ca.sdk.HFCAClient;
+import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
 
-import java.util.*;
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * @author 西城风雨楼
  */
-@Data
 public class FabricContext {
-
     /**
-     * 存放当前Fabric SDK Wrapper的所有配置信息
+     * 存放配置
      */
-    private final FabricConfigProperties fabricConfig;
+    private final FabricConfigProperties config;
 
-    /**
-     * 存放当前的admin对象
-     */
+    private Channel channel;
+
+    private HFClient hfClient;
+
+    private HFCAClient hfcaClient;
+
+    private final List<Peer> peers = new ArrayList<>();
+
+    private final List<Orderer> orderers = new ArrayList<>();
+
     private User admin;
 
-    private FabricCryptoClient fabricCryptoClient;
+    private CryptoPrimitives cryptoPrimitives;
 
-    private FabricCaClient fabricCaClient;
-
-    private String gopath;
-
-    public FabricContext(FabricConfigProperties fabricConfig) {
-        this.fabricConfig = fabricConfig;
-        admin = loadAdmin();
-        if (admin == null) {
-            throw new RuntimeException("加载admin失败");
+    public FabricContext(FabricConfigProperties properties) {
+        this.config = properties;
+        try {
+            init();
+        } catch (Exception e) {
+            throw new RuntimeException("fabric context初始化失败");
         }
-
-        fabricCryptoClient = new FabricCryptoClient(this);
-        fabricCaClient = new FabricCaClient(this);
-
-        gopath = fabricConfig.getChainCodeConfig().getGopath();
     }
 
-    public String getGopath() {
-        return gopath;
+    public Channel getChannel() {
+        return channel;
     }
 
-    public FabricCaClient getFabricCaClient() {
-        return fabricCaClient;
-    }
-
-    public FabricCryptoClient getFabricCryptoClient() {
-        return fabricCryptoClient;
-    }
-
-    /**
-     * 每次调用该方法都是创建新的peer列表
-     *
-     * @return
-     */
     public List<Peer> getPeers() {
-        HFClient hfClient = CommonUtils.getHfClient(admin);
-        Map<String, Peer> peerMap = loadPeerMap(hfClient);
-        if (peerMap == null || peerMap.size() == 0) {
-            return null;
-        }
-        return new ArrayList<>(peerMap.values());
+        return peers;
     }
 
-    public Channel getChannel(String channelName, User user) {
-        HFClient hfClient = CommonUtils.getHfClient(user);
-        List<Peer> peers = getPeers();
-        List<Orderer> orderers = getOrderers();
-
-        if (peers == null || orderers == null) {
-            throw new RuntimeException("channel创建失败");
-        }
-
-        try {
-            Channel channel = hfClient.newChannel(channelName);
-            for (Orderer orderer : orderers) {
-                channel.addOrderer(orderer);
-            }
-            for (Peer peer : peers) {
-                channel.addPeer(peer);
-            }
-
-            channel.initialize();
-            return channel;
-        } catch (Exception e) {
-            throw new RuntimeException("channel创建失败");
-        }
-    }
-
-    /**
-     * 每次调用该方法都是创建新的Orderer
-     *
-     * @return
-     */
     public List<Orderer> getOrderers() {
-        HFClient hfClient = CommonUtils.getHfClient(admin);
-        Map<String, Orderer> orderMap = loadOrdererMap(hfClient);
-        if (orderMap == null || orderMap.size() == 0) {
-            return null;
-        }
-        return new ArrayList<>(orderMap.values());
+        return orderers;
+    }
+
+    public User getAdmin() {
+        return admin;
+    }
+
+    public FabricConfigProperties getConfig() {
+        return config;
     }
 
     /**
-     * 加载PeerMap
+     * 让用户user对数据data进行签名
      *
-     * @param hfClient
-     * @return
+     * @param user 用户名
+     * @param data 数据
+     * @return 返回字节数组
      */
-    private Map<String, Peer> loadPeerMap(HFClient hfClient) {
-        Map<String, Peer> map = new HashMap<>();
-
+    public byte[] sign(User user, byte[] data) {
         try {
-            for (PeerConfig peerConfig : fabricConfig.getPeerConfigs()) {
-                String url = peerConfig.getUrl();
-                String tlsPath = peerConfig.getTlsPath();
-                String name = peerConfig.getName();
-                Properties properties = CommonUtils.loadTlsProperties(tlsPath, name);
-                map.put(name, hfClient.newPeer(name, url, properties));
-            }
+            return cryptoPrimitives.sign(user.getEnrollment().getKey(), data);
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
-        return map;
     }
 
     /**
-     * 加载OrdererMap
+     * 对数据进行Hash
      *
-     * @param hfClient
+     * @param data
      * @return
      */
-    private Map<String, Orderer> loadOrdererMap(HFClient hfClient) {
-        Map<String, Orderer> map = new HashMap<>();
+    public byte[] hash(byte[] data) {
+        return cryptoPrimitives.hash(data);
+    }
 
+    public boolean verify(User user, byte[] signature, byte[] plainText) {
         try {
-            for (OrdererConfig ordererConfig : fabricConfig.getOrdererConfigs()) {
-                String url = ordererConfig.getUrl();
-                String tlsPath = ordererConfig.getTlsPath();
-                String name = ordererConfig.getName();
-                Properties properties = CommonUtils.loadTlsProperties(tlsPath, name);
-                map.put(name, hfClient.newOrderer(name, url, properties));
-            }
+            byte[] certBytes = user.getEnrollment().getCert().getBytes();
+            return cryptoPrimitives.verify(certBytes, "SHA256withECDSA", signature, plainText);
         } catch (Exception e) {
-            return null;
+            e.printStackTrace();
+            return false;
         }
-        return map;
     }
 
     /**
-     * 加载admin对象
-     *
-     * @return
+     * 向CA注册用户
      */
-    private User loadAdmin() {
-        int adminCount = 0;
-        for (UserConfig userConfig : fabricConfig.getUserConfigs()) {
-            if (userConfig.getIsAdmin()) {
-                adminCount++;
+    public boolean registerUser(String username, String password) {
+        try {
+            if (hfcaClient == null) {
+                return false;
             }
+            RegistrationRequest registrationRequest = new RegistrationRequest(username);
+            registrationRequest.setSecret(password);
+            String affiliation = admin.getAffiliation();
+            registrationRequest.setAffiliation(affiliation);
+            String secret = hfcaClient.register(registrationRequest, admin);
+            return !StrUtil.isBlank(secret);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-        if (adminCount != 1) {
-            throw new RuntimeException("存在多个admin配置");
-        }
+    }
 
-        for (UserConfig userConfig : fabricConfig.getUserConfigs()) {
-            if (userConfig.getIsAdmin()) {
-                admin = CommonUtils.loadUserFromLocal(
-                        userConfig.getUsernameForCA(),
-                        userConfig.getPasswdForCA(),
-                        userConfig.getCertPath(),
-                        userConfig.getPrivateKeyPath(),
-                        fabricConfig.getMspConfig().getMspId());
-                return admin;
+    /**
+     * 撤销某个用户的证书
+     */
+    public boolean revokeUser(String revokedUser) {
+        try {
+            if (hfcaClient == null) {
+                return false;
             }
+            hfcaClient.revoke(admin, revokedUser, "revoked");
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 注册的同时，获取该用户的证书
+     */
+    public User registerAndEnroll(String username, String passwd) {
+        if (registerUser(username, passwd)) {
+            return enrollUser(username, passwd);
         }
         return null;
+    }
+
+    /**
+     * 获取某个用户的证书，前提是该用户已经注册过了
+     */
+    public User enrollUser(String username, String password) {
+        if (hfcaClient == null) {
+            return null;
+        }
+        Enrollment enrollment;
+        try {
+            enrollment = hfcaClient.enroll(username, password);
+        } catch (Exception e) {
+            return null;
+        }
+        FabricUser fabricUser = new FabricUser();
+        fabricUser.setName(username);
+        fabricUser.setPassword(password);
+        fabricUser.setMspId(admin.getMspId());
+        fabricUser.setEnrollment(enrollment);
+
+        return fabricUser;
+    }
+
+    private void init() throws Exception {
+        // 初始化admin
+        admin = getAdminUser();
+        // 初始化hf客户端
+        hfClient = getHfClient(admin);
+        // 初始化ca套件
+        hfcaClient = getHfcaClient();
+        channel = getChanel();
+        cryptoPrimitives = getCryptoPrimitives();
+    }
+
+    private CryptoPrimitives getCryptoPrimitives() {
+        BufferedInputStream bis = null;
+        CryptoPrimitives cryptoPrimitives;
+        try {
+            cryptoPrimitives = new CryptoPrimitives();
+            cryptoPrimitives.init();
+            String certPath = config.getCaConfig().getCaCertPath();
+            InputStream stream = FabricContext.class.getClassLoader().getResourceAsStream(certPath);
+            if (stream == null) {
+                throw new RuntimeException("ca证书路径没有配置");
+            }
+
+            bis = new BufferedInputStream(stream);
+            cryptoPrimitives.addCACertificatesToTrustStore(bis);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("CryptoClient创建失败");
+        } finally {
+            if (bis != null) {
+                try {
+                    bis.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return cryptoPrimitives;
+    }
+
+    private HFClient getHfClient(User admin) {
+        return CommonUtils.getHfClient(admin);
+    }
+
+    private HFCAClient getHfcaClient() throws Exception {
+        CryptoSuite cryptoSuite = CryptoSuite.Factory.getCryptoSuite();
+        String url = config.getCaConfig().getUrl();
+        HFCAClient hfcaClient = HFCAClient.createNewInstance(url, null);
+        hfcaClient.setCryptoSuite(cryptoSuite);
+        return hfcaClient;
+    }
+
+    private User getAdminUser() {
+        CAConfig caConfig = config.getCaConfig();
+        return CommonUtils.loadUserFromLocal(caConfig.getAdminName(),
+                caConfig.getAdminPasswd(), caConfig.getAdminCertPath(),
+                caConfig.getAdminPrivateKeyPath(), caConfig.getAdminMspId());
+    }
+
+
+    private Channel getChanel() throws Exception {
+        String channelName = config.getChannelConfig().getChannelName();
+        channel = hfClient.newChannel(channelName);
+
+        // 创建当前channel的peer
+        for (PeerConfig peerConfig : config.getChannelConfig().getPeerConfigs()) {
+            String url = peerConfig.getUrl();
+            String tlsPath = peerConfig.getTlsPath();
+            String name = peerConfig.getName();
+            Properties properties = CommonUtils.loadTlsProperties(tlsPath, name);
+            Peer peer = hfClient.newPeer(name, url, properties);
+            peers.add(peer);
+            channel.addPeer(peer);
+        }
+
+        // 创建当前channel的orderer
+        for (OrdererConfig ordererConfig : config.getChannelConfig().getOrdererConfigs()) {
+            String url = ordererConfig.getUrl();
+            String tlsPath = ordererConfig.getTlsPath();
+            String name = ordererConfig.getName();
+            Properties properties = CommonUtils.loadTlsProperties(tlsPath, name);
+            Orderer orderer = hfClient.newOrderer(name, url, properties);
+            orderers.add(orderer);
+            channel.addOrderer(orderer);
+        }
+        channel.initialize();
+        return channel;
     }
 }
