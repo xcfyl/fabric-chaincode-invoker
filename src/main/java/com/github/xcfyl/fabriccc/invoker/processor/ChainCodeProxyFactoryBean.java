@@ -19,6 +19,7 @@ import javax.annotation.Resource;
 import java.lang.reflect.*;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -145,6 +146,9 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                             // 那么找到该泛型参数的实际类型
                             Type actualTypeArguments = parameterizedType.getActualTypeArguments()[0];
                             resultClass = (Class) parameterizedType.getRawType();
+                            if (resultClass != List.class) {
+                                throw new BeanCreationException("ResultHandler的泛型参数不是List<Bean>形式");
+                            }
                             if (actualTypeArguments instanceof Class) {
                                 // 这是泛型类型，走到这里说明这是一个List
                                 genericClass = (Class) actualTypeArguments;
