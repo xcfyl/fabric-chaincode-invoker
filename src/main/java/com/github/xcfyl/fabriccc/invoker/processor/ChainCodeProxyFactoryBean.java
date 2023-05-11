@@ -92,6 +92,18 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                     }
                 }
 
+                // 获取resultType和returnType
+                Class<?> returnType = method.getReturnType();
+                Class<?> resultType = null;
+                Type genericReturnType = method.getGenericReturnType();
+                if (genericReturnType instanceof ParameterizedType) {
+                    ParameterizedType type = (ParameterizedType) genericReturnType;
+                    Type argument = type.getActualTypeArguments()[0];
+                    if (argument instanceof Class) {
+                        resultType = (Class<?>) argument;
+                    }
+                }
+
                 if (method.isAnnotationPresent(Invoke.class)) {
                     // 说明当前方法执行的是invoke调用
                     log.debug("当前执行的是invoke调用");
@@ -100,7 +112,7 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                     String channelName = annotation.channelName();
                     String funcName = method.getName();
                     Invoke invoke = method.getAnnotation(Invoke.class);
-                    Class<?> genericClass = invoke.genericClass();
+                    Class<?> genericClass = resultType == null ? invoke.genericClass() : resultType;
                     String[] chainCodeArgs = parseArgs(args, genericClass);
                     log.debug("invoke的参数为: " + objectMapper.writeValueAsString(chainCodeArgs));
 
@@ -138,12 +150,11 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                     log.debug("当前执行的是query调用");
 
                     User user = (User) args[0];
-                    Class returnType = method.getReturnType();
                     ChainCodeProxy annotation = targetClass.getAnnotation(ChainCodeProxy.class);
                     String channelName = annotation.channelName();
                     String funcName = method.getName();
                     Query query = method.getAnnotation(Query.class);
-                    Class<?> genericClass = query.genericClass();
+                    Class<?> genericClass = resultType == null ? query.genericClass() : resultType;
                     String[] chainCodeArgs = parseArgs(args, genericClass);
                     log.debug("query的参数是: {}", objectMapper.writeValueAsString(chainCodeArgs));
                     long timeout = query.timeout();

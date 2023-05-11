@@ -12,7 +12,7 @@
 
     <groupId>com.github.xcfyl.fabric</groupId>
     <artifactId>fabric-chaincode-invoker</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <name>fabric-chaincode-invoker</name>
     <description>基于fabric-sdk的链码调用封装，简化链码调用过程，同时提供更多的工具支持</description>
 
