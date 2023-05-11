@@ -62,7 +62,7 @@ public abstract class AbstractFabricRequest<T> implements IFabricRequest<T> {
     @SuppressWarnings("unchecked")
     protected T parseResult(byte[] data) {
         TypeParseHandler<?> parser = RESULT_PARSE_HANDLER_MAP.getOrDefault(resultClazz,
-                new JsonParseHandler<>((Class<T>) resultClazz, genericClass));
+                new JsonListAndBeanParseHandler<>((Class<T>) resultClazz, genericClass));
         return (T) parser.parse(data);
     }
 
