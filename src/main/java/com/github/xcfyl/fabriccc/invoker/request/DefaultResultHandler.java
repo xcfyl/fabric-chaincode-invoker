@@ -1,12 +1,12 @@
-package com.github.xcfyl.fabriccc.invoker.handler;
+package com.github.xcfyl.fabriccc.invoker.request;
 
 /**
  * @author 西城风雨楼
  */
-public class DefaultInitResultHandler implements ResultHandler<String> {
+public class DefaultResultHandler implements ResultHandler<Object> {
 
     @Override
-    public void handleSuccess(String result) {
+    public void handleSuccess(Object result) {
         System.out.println("执行成功: ");
         System.out.println(result);
     }

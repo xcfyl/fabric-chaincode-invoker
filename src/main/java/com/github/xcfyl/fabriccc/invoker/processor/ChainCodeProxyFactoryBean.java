@@ -3,7 +3,7 @@ package com.github.xcfyl.fabriccc.invoker.processor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.xcfyl.fabriccc.invoker.annotation.*;
 import com.github.xcfyl.fabriccc.invoker.context.FabricContext;
-import com.github.xcfyl.fabriccc.invoker.handler.ResultHandler;
+import com.github.xcfyl.fabriccc.invoker.request.ResultHandler;
 import com.github.xcfyl.fabriccc.invoker.handler.TypeParseHandler;
 import com.github.xcfyl.fabriccc.invoker.handler.impl.*;
 import com.github.xcfyl.fabriccc.invoker.request.InitRequest;
@@ -59,11 +59,17 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
 
     @SuppressWarnings({"rawuse", "unchecked"})
     private String[] parseArgs(Object[] args, Class<?> genericClass) {
-        String[] chainCodeArgs = new String[args.length - 1];
-        for (int i = 1; i < args.length; i++) {
+        int start = 1;
+        if (args[1] instanceof ResultHandler) {
+            start++;
+        }
+        String[] chainCodeArgs = new String[args.length - start];
+
+        for (int i = 0; start < args.length; start++, i++) {
             // 怎么解决参数是数组类型啊
-            TypeParseHandler<Object> typeParseHandler = (TypeParseHandler<Object>) RESULT_PARSE_HANDLER_MAP.getOrDefault(args[i].getClass(), new JsonParseHandler<>(args[i].getClass(), genericClass));
-            chainCodeArgs[i - 1] = typeParseHandler.get(args[i]);
+            TypeParseHandler<Object> typeParseHandler = (TypeParseHandler<Object>) RESULT_PARSE_HANDLER_MAP
+                    .getOrDefault(args[start].getClass(), new JsonParseHandler<>(args[start].getClass(), genericClass));
+            chainCodeArgs[i] = typeParseHandler.get(args[start]);
         }
         return chainCodeArgs;
     }
@@ -97,10 +103,20 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
                     Class<?> genericClass = invoke.genericClass();
                     String[] chainCodeArgs = parseArgs(args, genericClass);
                     log.debug("invoke的参数为: " + objectMapper.writeValueAsString(chainCodeArgs));
-                    Class<? extends ResultHandler<?>> handlerClass = invoke.resultHandler();
-                    ResultHandler resultHandler = handlerClass.getConstructor().newInstance();
-                    Type[] types = handlerClass.getGenericInterfaces();
 
+                    // 这是在获取注解上面的ResultHandler声明
+                    Class<? extends ResultHandler<?>> handlerClass;
+                    ResultHandler resultHandler;
+                    if (!(args[1] instanceof ResultHandler)) {
+                        handlerClass = invoke.resultHandler();
+                        resultHandler = handlerClass.getConstructor().newInstance();
+                    } else {
+                        // 如果发现用户在方法中设置ResultHandler，那么优先使用方法中的ResultHandler
+                        resultHandler = (ResultHandler) args[1];
+                        handlerClass = (Class<? extends ResultHandler<?>>) args[1].getClass();
+                    }
+
+                    Type[] types = handlerClass.getGenericInterfaces();
                     if (types.length != 1) {
                         throw new BeanCreationException("ResultHandler的参数错误");
                     }

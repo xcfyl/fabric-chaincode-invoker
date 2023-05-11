@@ -1,7 +1,6 @@
 package com.github.xcfyl.fabriccc.invoker.request;
 
 import com.github.xcfyl.fabriccc.invoker.context.FabricContext;
-import com.github.xcfyl.fabriccc.invoker.handler.ResultHandler;
 import com.github.xcfyl.fabriccc.invoker.utils.CommonUtils;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;

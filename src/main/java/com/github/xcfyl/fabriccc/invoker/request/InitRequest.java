@@ -2,7 +2,6 @@ package com.github.xcfyl.fabriccc.invoker.request;
 
 import com.github.xcfyl.fabriccc.invoker.utils.CommonUtils;
 import com.github.xcfyl.fabriccc.invoker.context.FabricContext;
-import com.github.xcfyl.fabriccc.invoker.handler.ResultHandler;
 import org.hyperledger.fabric.sdk.ChaincodeEndorsementPolicy;
 import org.hyperledger.fabric.sdk.InstantiateProposalRequest;
 import org.hyperledger.fabric.sdk.ProposalResponse;

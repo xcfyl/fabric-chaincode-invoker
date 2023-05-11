@@ -1,6 +1,6 @@
 package com.github.xcfyl.fabriccc.invoker.service;
 
-import com.github.xcfyl.fabriccc.invoker.handler.ResultHandler;
+import com.github.xcfyl.fabriccc.invoker.request.ResultHandler;
 
 /**
  * @author 西城风雨楼
