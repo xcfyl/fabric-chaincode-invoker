@@ -60,12 +60,18 @@ public class ChainCodeProxyFactoryBean<T> implements FactoryBean<T> {
 
     @SuppressWarnings({"rawuse", "unchecked"})
     private String[] parseArgs(Object[] args, Class<?> genericClass) {
+        // args数组中args[0]默认是User对象
+        // args[1]可以是ResultHandler对象
+        // 因此args的下标至少从1开始
         int start = 1;
         if (args[1] instanceof ResultHandler) {
+            // 如果发现args[1]确实是resultHandler对象
+            // 那么args数组下标应该从2开始
             start++;
         }
-        String[] chainCodeArgs = new String[args.length - start];
 
+        // 存放真实的链码调用数组
+        String[] chainCodeArgs = new String[args.length - start];
         for (int i = 0; start < args.length; start++, i++) {
             // 怎么解决参数是数组类型啊
             TypeParseHandler<Object> typeParseHandler = (TypeParseHandler<Object>) RESULT_PARSE_HANDLER_MAP
