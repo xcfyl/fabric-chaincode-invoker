@@ -40,6 +40,8 @@ public class FabricContext {
 
     private User admin;
 
+    private User caAdmin;
+
     private CryptoPrimitives cryptoPrimitives;
 
     public FabricContext(FabricConfigProperties properties) {
@@ -119,7 +121,7 @@ public class FabricContext {
             registrationRequest.setSecret(password);
             String affiliation = admin.getAffiliation();
             registrationRequest.setAffiliation(affiliation);
-            String secret = hfcaClient.register(registrationRequest, admin);
+            String secret = hfcaClient.register(registrationRequest, caAdmin);
             return !StrUtil.isBlank(secret);
         } catch (Exception e) {
             e.printStackTrace();
@@ -135,7 +137,7 @@ public class FabricContext {
             if (hfcaClient == null) {
                 return false;
             }
-            hfcaClient.revoke(admin, revokedUser, "revoked");
+            hfcaClient.revoke(caAdmin, revokedUser, "revoked");
             return true;
         } catch (Exception e) {
             return false;
@@ -168,7 +170,7 @@ public class FabricContext {
         FabricUser fabricUser = new FabricUser();
         fabricUser.setName(username);
         fabricUser.setPassword(password);
-        fabricUser.setMspId(admin.getMspId());
+        fabricUser.setMspId(caAdmin.getMspId());
         fabricUser.setEnrollment(enrollment);
 
         return fabricUser;
@@ -181,6 +183,7 @@ public class FabricContext {
         hfClient = getHfClient(admin);
         // 初始化ca套件
         hfcaClient = getHfcaClient();
+        caAdmin = enrollUser("admin", "adminpw");
         channel = getChanel();
         cryptoPrimitives = getCryptoPrimitives();
     }
