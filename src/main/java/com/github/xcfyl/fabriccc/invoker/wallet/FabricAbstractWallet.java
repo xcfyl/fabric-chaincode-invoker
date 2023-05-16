@@ -52,20 +52,20 @@ public abstract class FabricAbstractWallet implements IFabricWallet  {
         initKeyPair();
     }
 
-    public void setWalletAddInterceptor(WalletAddInterceptor walletAddInterceptor) {
+    public synchronized void setWalletAddInterceptor(WalletAddInterceptor walletAddInterceptor) {
         this.walletAddInterceptor = walletAddInterceptor;
     }
 
-    public void setWalletRemoveInterceptor(WalletRemoveInterceptor walletRemoveInterceptor) {
+    public synchronized void setWalletRemoveInterceptor(WalletRemoveInterceptor walletRemoveInterceptor) {
         this.walletRemoveInterceptor = walletRemoveInterceptor;
     }
 
-    public void setWalletQueryInterceptor(WalletQueryInterceptor walletQueryInterceptor) {
+    public synchronized void setWalletQueryInterceptor(WalletQueryInterceptor walletQueryInterceptor) {
         this.walletQueryInterceptor = walletQueryInterceptor;
     }
 
     @Override
-    public boolean clearWallet() {
+    public synchronized boolean clearWallet() {
         List<WalletInfo> walletInfos = listWallet();
 
         if (walletInfos == null || walletInfos.size() == 0) {
@@ -92,7 +92,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet  {
     }
 
     @Override
-    public List<WalletInfo> listWallet() {
+    public synchronized List<WalletInfo> listWallet() {
         List<WalletInfo> walletInfos = doListWallet();
         if (walletQueryInterceptor != null) {
             return walletQueryInterceptor.filterWalletInfo(keyPair, walletInfos);
@@ -101,7 +101,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet  {
     }
 
     @Override
-    public List<WalletInfo> listWallet(WalletStatus status) {
+    public synchronized List<WalletInfo> listWallet(WalletStatus status) {
         List<WalletInfo> walletInfos = doListWallet(status);
         if (walletQueryInterceptor != null) {
             return walletQueryInterceptor.filterWalletInfo(keyPair, walletInfos);
@@ -110,7 +110,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet  {
     }
 
     @Override
-    public List<WalletInfo> listWallet(String username, WalletStatus status) {
+    public synchronized List<WalletInfo> listWallet(String username, WalletStatus status) {
         List<WalletInfo> walletInfos = doListWallet(username, status);
         if (walletQueryInterceptor != null) {
             return walletQueryInterceptor.filterWalletInfo(keyPair, walletInfos);
@@ -119,7 +119,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet  {
     }
 
     @Override
-    public List<WalletInfo> listWallet(String username) {
+    public synchronized List<WalletInfo> listWallet(String username) {
         List<WalletInfo> walletInfos = doListWallet(username);
         if (walletQueryInterceptor != null) {
             return walletQueryInterceptor.filterWalletInfo(keyPair, walletInfos);
@@ -128,7 +128,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet  {
     }
 
     @Override
-    public boolean addUser(User user, Date expiredTime) {
+    public synchronized boolean addUser(User user, Date expiredTime) {
         FabricUser fabricUser = (FabricUser) user;
         WalletInfo walletInfo = new WalletInfo();
         Integer walletId = walletConfig.getWalletId();
@@ -156,6 +156,8 @@ public abstract class FabricAbstractWallet implements IFabricWallet  {
         walletInfo.setStatus(status);
         walletInfo.setPublicKeyHash(publicKeyHash);
 
+        // 这里相当于是什么都没有做，没有进行加密或者解密
+
         if (walletAddInterceptor != null) {
             Boolean res = walletAddInterceptor.preAdd(keyPair, walletInfo);
             if (res != null) {
@@ -175,7 +177,7 @@ public abstract class FabricAbstractWallet implements IFabricWallet  {
     }
 
     @Override
-    public boolean removeUser(User user, boolean force) {
+    public synchronized boolean removeUser(User user, boolean force) {
         List<WalletInfo> walletInfos = listWallet(user.getName());
         if (walletInfos == null || walletInfos.size() == 0) {
             return false;
@@ -214,49 +216,19 @@ public abstract class FabricAbstractWallet implements IFabricWallet  {
     protected abstract boolean doRemoveUser(List<WalletInfo> walletInfoList, boolean force);
 
     private void initKeyPair() {
-        Resource walletKeyResource = applicationContext.getResource("classpath:.");
-        System.out.println(walletKeyResource);
-        try {
-            String path = walletKeyResource.getURI().getPath();
-            // 读取配置文件中指定位置的私钥
-            String privateKeyPath = walletConfig.getPrivateKeyPath();
-            // 读取配置文件中指定位置的公钥
-            String publicKeyPath = walletConfig.getPublicKeyPath();
-            Path pkPath = Paths.get(path, publicKeyPath);
-            Path skPath = Paths.get(path, privateKeyPath);
-
-            if (!Files.exists(pkPath) || !Files.exists(skPath)) {
-                // 如果当前公私钥对已经存在了，那么就不进行创建
-                if (!Files.exists(pkPath)) {
-                    Files.createFile(pkPath);
-                }
-                if (!Files.exists(skPath)) {
-                    Files.createFile(skPath);
-                }
-                KeyPair keyPair = SM2Utils.generateKeyPair();
-                if (keyPair == null) {
-                    throw new RuntimeException("生成钱包的公私钥对失败");
-                }
-                log.debug("钱包公私钥不存在，创建钱包公私钥");
-                SM2Utils.saveKeyPairInPem(keyPair, pkPath.toFile().getPath(), skPath.toFile().getPath());
-            } else {
-                log.debug("找到了钱包公私钥，使用默认公私钥: pk: {}, sk: {}", pkPath.toFile().getPath(),
-                        skPath.toFile().getPath());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("获取钱包的公私钥相对路径失败");
-        }
-
         Resource pkResource = applicationContext.getResource("classpath:" + walletConfig.getPublicKeyPath());
-
         Resource skResource = applicationContext.getResource("classpath:" + walletConfig.getPrivateKeyPath());
+
 
         // 在这初始化私钥和公钥
         try (InputStream pkResourceInputStream = pkResource.getInputStream();
              InputStream skReourceInputStream = skResource.getInputStream()) {
+            if (log.isDebugEnabled()) {
+                log.debug("公钥路径: {}", pkResource.getFile().getPath());
+                log.debug("私钥路径: {}", skResource.getFile().getPath());
+            }
             byte[] skBytes = IOUtils.toByteArray(skReourceInputStream);
             byte[] pkBytes = IOUtils.toByteArray(pkResourceInputStream);
-            log.debug("公钥: {}", new String(skBytes));
             publicKey = SM2Utils.loadPublicKeyFromFile(new StringReader(new String(pkBytes)));
             privateKey = SM2Utils.loadPrivateKeyFromFile(new StringReader(new String(skBytes)), null);
             keyPair = new KeyPair(publicKey, privateKey);
