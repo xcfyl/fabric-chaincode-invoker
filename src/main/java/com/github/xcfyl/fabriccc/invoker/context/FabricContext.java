@@ -38,7 +38,7 @@ public class FabricContext {
 
     private final List<Orderer> orderers = new ArrayList<>();
 
-    private User admin;
+    private FabricUser admin;
 
     private User caAdmin;
 
@@ -178,12 +178,12 @@ public class FabricContext {
 
     private void init() throws Exception {
         // 初始化admin
-        admin = getAdminUser();
+        admin = (FabricUser) getAdminUser();
         // 初始化hf客户端
         hfClient = getHfClient(admin);
         // 初始化ca套件
         hfcaClient = getHfcaClient();
-        caAdmin = enrollUser("admin", "adminpw");
+        caAdmin = enrollUser(admin.getName(), admin.getPassword());
         channel = getChanel();
         cryptoPrimitives = getCryptoPrimitives();
     }
