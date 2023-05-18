@@ -170,7 +170,7 @@ public class FabricContext {
         FabricUser fabricUser = new FabricUser();
         fabricUser.setName(username);
         fabricUser.setPassword(password);
-        fabricUser.setMspId(caAdmin.getMspId());
+        fabricUser.setMspId(admin.getMspId());
         fabricUser.setEnrollment(enrollment);
 
         return fabricUser;
