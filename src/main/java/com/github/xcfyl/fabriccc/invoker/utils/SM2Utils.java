@@ -31,9 +31,6 @@ import static com.github.xcfyl.fabriccc.invoker.utils.sm2.SM2Client.CONVERTER;
 
 @Slf4j
 public class SM2Utils {
-
-    final static SM2EnginePool ENGINE_POOL = new SM2EnginePool(1, SM2Engine.Mode.C1C2C3);
-
     static {
         try {
             Security.addProvider(new BouncyCastleProvider());
@@ -55,16 +52,18 @@ public class SM2Utils {
         }
         SM2Engine sm2Engine = null;
         byte[] encrypted = null;
+        SM2EnginePool sm2EnginePool = null;
         try {
             SM2Client instance = new SM2Client();
-            sm2Engine = ENGINE_POOL.borrowObject();
+            sm2EnginePool = new SM2EnginePool(1, SM2Engine.Mode.C1C2C3);
+            sm2Engine = sm2EnginePool.borrowObject();
             encrypted = instance.encrypt(sm2Engine, publicKey, message.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             if (sm2Engine != null) {
-                ENGINE_POOL.returnObject(sm2Engine);
-                ENGINE_POOL.close();
+                sm2EnginePool.returnObject(sm2Engine);
+                sm2EnginePool.close();
             }
         }
         return encrypted;
